@@ -24,7 +24,7 @@ group = 'ca.umontreal.iro.simul'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-version = '3.3.1'
+version = '3.3.2'
 
 repositories {
     jcenter()
@@ -88,9 +88,6 @@ publishing {
             }
 
             // Add docs JAR
-            artifact docsJar {
-                classifier "javadoc"
-            }
 
             // Populate the pom file
             pom.withXml {
@@ -436,9 +433,7 @@ task sourceJar(type: Jar) {
     }
 }
 
-task docsJar(type: Jar) {
-    from doxygen
-}
+
 
 
 // ****************************** DISTRIBUTION ******************************

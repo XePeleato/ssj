@@ -25,6 +25,8 @@
 package umontreal.ssj.util;
    import umontreal.ssj.functions.MathFunction;
 
+   import java.math.BigDecimal;
+
 /**
  * This class provides miscellaneous functions that are hard to classify.
  * Some may be moved to another class in the future.
@@ -189,6 +191,41 @@ public class Misc {
             // Should not happen, safety check to avoid infinite loops.
             throw new IllegalStateException();
          if (t < times[mid])
+            // time corresponds to an interval before mid.
+            end = mid - 1;
+         else
+            // time corresponds to an interval after mid.
+            start = mid + 1;
+         mid = (start + end)/2;
+      }
+      return mid - start0;
+   }
+
+   public static int getTimeInterval (BigDecimal[] times, int start, int end,
+                                      BigDecimal t) {
+      if (start < 0)
+         throw new IllegalArgumentException
+                 ("The starting index must not be negative");
+      int n = end - start;
+      if (n < 0)
+         throw new IllegalArgumentException
+                 ("The ending index must be greater than or equal to the starting index");
+      if (t.compareTo(times[start]) < 0)
+         return -1;
+      if (t.compareTo(times[end]) >= 0)
+         return n;
+
+      int start0 = start;
+      // Perform binary search to find the interval index
+      int mid = (start + end)/2;
+      // Test if t is inside the interval mid.
+      // The interval mid starts at times[mid],
+      // and the interval mid+1 starts at times[mid + 1].
+      while (t.compareTo(times[mid]) < 0 || t.compareTo(times[mid + 1]) >= 0) {
+         if (start == end)
+            // Should not happen, safety check to avoid infinite loops.
+            throw new IllegalStateException();
+         if (t.compareTo(times[mid]) < 0)
             // time corresponds to an interval before mid.
             end = mid - 1;
          else
