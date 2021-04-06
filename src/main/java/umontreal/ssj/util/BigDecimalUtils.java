@@ -9,8 +9,12 @@ import static java.math.BigDecimal.TEN;
 public class BigDecimalUtils {
 
     private static final int MACH_SCALE = Math.abs(getExponent(BigDecimal.valueOf(getMachineEpsilon()))) + 1;
-    public static final BigDecimal TWO = new BigDecimal("2.0");
-    public static final BigDecimal THREE = new BigDecimal("3.0");
+    public static final BigDecimal P15 = new BigDecimal("0.15");
+    public static final BigDecimal QUARTER = new BigDecimal("0.25");
+    public static final BigDecimal HALF = new BigDecimal("0.5");
+    public static final BigDecimal TWO = new BigDecimal("2");
+    public static final BigDecimal THREE = new BigDecimal("3");
+    public static final BigDecimal FOUR = new BigDecimal("4");
 
     /**
      * Compare two {@code BigDecimal}s up to a precision.
@@ -23,6 +27,23 @@ public class BigDecimalUtils {
      */
     public static int compare(BigDecimal n1, BigDecimal n2, int p) {
         BigDecimal epsilon = BigDecimal.ONE.movePointLeft(p);
+        BigDecimal absDelta = n1.subtract(n2).abs();
+        int result = absDelta.compareTo(epsilon);
+        return result <= 0 ? 0 : n1.compareTo(n2);
+    }
+
+    /**
+     * Compare two {@code BigDecimal}s up to a precision.
+     * In other words, if the absolute difference between the two numbers falls below a threshold, they are considered equal.
+     *
+     * @param n1 a {@code BigDecimal}
+     * @param n2 a {@code BigDecimal}
+     * @param k a {@code int}
+     * @param p  the threshold is <i>ke-p</i>
+     * @return -1, 0, or 1 when {@code n1} is numerically less than, equal to, or greater than {@code n2}, respectively
+     */
+    public static int compare(BigDecimal n1, BigDecimal n2, int k, int p) {
+        BigDecimal epsilon = BigDecimal.valueOf(k).movePointLeft(p);
         BigDecimal absDelta = n1.subtract(n2).abs();
         int result = absDelta.compareTo(epsilon);
         return result <= 0 ? 0 : n1.compareTo(n2);

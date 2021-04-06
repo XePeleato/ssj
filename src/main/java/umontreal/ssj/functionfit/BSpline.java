@@ -31,6 +31,7 @@ import umontreal.ssj.util.RootFinder;
 import cern.colt.matrix.linalg.Algebra;
 import cern.colt.matrix.DoubleMatrix2D;
 import cern.colt.matrix.DoubleFactory2D;
+import umontreal.ssj.util.RootFinderBD;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -77,7 +78,7 @@ import java.util.zip.ZipError;
  *
  * <div class="SSJ-bigskip"></div>
  */
-public class BSpline implements MathFunction
+public class BSpline implements MathFunctionBD
 
 ,
 MathFunctionWithIntegral, MathFunctionWithDerivative, MathFunctionWithFirstDerivative{
@@ -204,12 +205,12 @@ MathFunctionWithIntegral, MathFunctionWithDerivative, MathFunctionWithFirstDeriv
       int n = x.length-1;
       //compute t : parameters vector uniformly from 0 to 1
       BigDecimal[] t = emptyArray(x.length);
-      for(int i =0; i<t.length; i++) {
+      for(int i = 0; i<t.length; i++) {
          t[i] = BigDecimal.valueOf((double)i/(t.length-1));
       }
 
       //compute U : clamped knots vector uniformly from 0 to 1
-      BigDecimal U[] = emptyArray(x.length + degree + 1);
+      BigDecimal[] U = emptyArray(x.length + degree + 1);
       int m = U.length-1;
       for(int i =0; i<=degree; i++)
          U[i] = BigDecimal.ZERO;
@@ -275,7 +276,7 @@ MathFunctionWithIntegral, MathFunctionWithDerivative, MathFunctionWithFirstDeriv
       //compute t : parameters vector uniformly from 0 to 1
       BigDecimal[] t = emptyArray(x.length);
       for(int i = 0; i < t.length; i++) {
-         t[i] = BigDecimal.valueOf(i / n);
+         t[i] = BigDecimal.valueOf((double)i / n);
       }
 
       //compute U : clamped knots vector uniformly from 0 to 1
@@ -284,7 +285,7 @@ MathFunctionWithIntegral, MathFunctionWithDerivative, MathFunctionWithFirstDeriv
       for(int i = 0; i <= degree; i++)
          U[i] = BigDecimal.ZERO;
       for(int i = 1; i < hp1 - degree; i++)
-         U[i+degree] = BigDecimal.valueOf(i/(hp1 - degree));
+         U[i+degree] = BigDecimal.valueOf((double)i/(hp1 - degree));
       for(int i = m-degree; i<= m; i++)
          U[i] = BigDecimal.ONE;
 
@@ -405,16 +406,16 @@ MathFunctionWithIntegral, MathFunctionWithDerivative, MathFunctionWithFirstDeriv
    }
 
    public BigDecimal evaluate(final BigDecimal u) {
-      final MathFunction xFunction = new MathFunction () {
+      final MathFunctionBD xFunction = new MathFunctionBD () {
          @Override
-         public double evaluate(double x) {
-            return evalX(BigDecimal.valueOf(x)).subtract(u).doubleValue();
+         public BigDecimal evaluate(BigDecimal x) {
+            return evalX(x).subtract(u);
          }
       };
       // brentDekker may be unstable; using bisection instead
       // final double t = RootFinder.brentDekker (0, 1, xFunction, 1e-6);
-      final double t = RootFinder.bisection (0, 1, xFunction, 1e-6);
-      return evalY(BigDecimal.valueOf(t));
+      final BigDecimal t = RootFinderBD.bisection(BigDecimal.ZERO, BigDecimal.ONE, xFunction, new BigDecimal("1e-6"));
+      return evalY(t);
    }
 
    public double integral (double a, double b) {
@@ -435,7 +436,7 @@ MathFunctionWithIntegral, MathFunctionWithDerivative, MathFunctionWithFirstDeriv
          knots = emptyArray(x.length + degree + 1);
 
          for(int i = degree; i < this.knots.length-degree; i++)
-            this.knots[i]= BigDecimal.valueOf((i-degree)/(knots.length - (2.0*degree) -1));
+            this.knots[i]= BigDecimal.valueOf((double)(i-degree)/(knots.length - (2.0*degree) -1));
 
          if (this.knots.length - (this.knots.length - degree) >= 0)
             System.arraycopy(this.knots, this.knots.length - degree - 1, this.knots, this.knots.length - degree, this.knots.length - (this.knots.length - degree));
@@ -504,8 +505,7 @@ MathFunctionWithIntegral, MathFunctionWithDerivative, MathFunctionWithFirstDeriv
       
       BigDecimal[][] X = initBDMatrix(degree + 1, myX.length);
 
-      for(int i = k-degree; i<=k; i++)
-         X[0][i] = myX[i];
+      if (k + 1 - (k - degree) >= 0) System.arraycopy(myX, k - degree, X[0], k - degree, k + 1 - (k - degree));
 
       for(int j=1; j<= degree; j++) {
          for(int i = k-degree+j; i <= k; i++) {
@@ -565,7 +565,6 @@ MathFunctionWithIntegral, MathFunctionWithDerivative, MathFunctionWithFirstDeriv
       N[k] = BigDecimal.ONE;
       for(int d = 1; d <= degree; d++) {
          N[k-d] = N[k-d+1].multiply(U[k+1].subtract(u)).divide(U[k+1].subtract(U[k-d+1]), MathContext.DECIMAL64);
-
 
          for(int i = k-d+1; i<= k-1; i++)
             N[i] = u.subtract(U[i]).divide(U[i+d].subtract(U[i]).multiply(N[i]), MathContext.DECIMAL64).add(
